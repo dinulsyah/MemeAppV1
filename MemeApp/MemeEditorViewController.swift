@@ -109,15 +109,17 @@ class MemeEditorViewController: UIViewController{
     // MARK: All Condition & Action for Configuring UI
     
     func configureUI(_ state:String){
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.alignment = .center
+        let textConfig = textAttributes.init(strokeColor: UIColor.black, foregroundColor: UIColor.white, font: UIFont(name: "HelveticaNeue-CondensedBlack", size: 40)!, strokeWidth: -4.5, paragragraphStyle:paragraph)
+        
         switch state {
         case "viewDidLoad":
+            topTextField.defaultTextAttributes = textConfig.meme
             topTextField.text = "TOP"
-            topTextField.textAlignment = NSTextAlignment.center
-            topTextField.defaultTextAttributes = textAttributes.meme
             topTextField.delegate = self
             bottomTextField.text = "BOTTOM"
-            bottomTextField.textAlignment = NSTextAlignment.center
-            bottomTextField.defaultTextAttributes = textAttributes.meme
+            bottomTextField.defaultTextAttributes = textConfig.meme
             bottomTextField.delegate = self
             sharedButton.isEnabled = false
         case "cancelApplication":
