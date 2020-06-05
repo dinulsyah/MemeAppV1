@@ -46,18 +46,21 @@ class MemeEditorViewController: UIViewController{
     
     // MARK: Pick an Image from Gallery
     @IBAction func pickAnImage(_ sender: Any) {
-        let imagePicker = UIImagePickerController()
-        imagePicker.delegate = self
-        imagePicker.sourceType = .photoLibrary
-        present(imagePicker, animated: true, completion: nil)
+        chooseSourceType(sourceType: .photoLibrary, allowsEditing: nil)
     }
     
     // MARK: Pick an Image from Camera
     @IBAction func pickAnImageFromCamera(_ sender: Any) {
+        chooseSourceType(sourceType: .camera, allowsEditing: true)
+    }
+    
+    func chooseSourceType(sourceType:UIImagePickerController.SourceType, allowsEditing:Bool?){
         let imagePicker = UIImagePickerController()
         imagePicker.delegate = self
-        imagePicker.sourceType = .camera
-        imagePicker.allowsEditing = true
+        imagePicker.sourceType = sourceType
+        if let allowsEditing = allowsEditing{
+            imagePicker.allowsEditing = allowsEditing
+        }
         present(imagePicker, animated: true, completion: nil)
     }
     
@@ -66,12 +69,14 @@ class MemeEditorViewController: UIViewController{
     }
     
     @IBAction func sharedActivity(_ sender: Any) {
-        // Create the meme
         let memedImage = generateMemedImage()
         
         // Save the meme into struct
         func save() {
-            _ = Meme(topText: topTextField.text!, bottomText: bottomTextField.text!, originalImage: imagePickerView.image!, memedImage: memedImage)
+            guard let topTextField = topTextField.text, let bottomTextField = bottomTextField.text, let imagePickerView = imagePickerView.image else {
+                return
+            }
+            _ = Meme(topText: topTextField, bottomText:bottomTextField, originalImage: imagePickerView, memedImage: memedImage)
         }
         
         let activityView = UIActivityViewController(activityItems: [memedImage], applicationActivities: nil)
@@ -114,28 +119,37 @@ class MemeEditorViewController: UIViewController{
         let textConfig = textAttributes.init(strokeColor: UIColor.black, foregroundColor: UIColor.white, font: UIFont(name: "HelveticaNeue-CondensedBlack", size: 40)!, strokeWidth: -4.5, paragragraphStyle:paragraph)
         
         switch state {
-        case "viewDidLoad":
-            topTextField.defaultTextAttributes = textConfig.meme
-            topTextField.text = "TOP"
-            topTextField.delegate = self
-            bottomTextField.text = "BOTTOM"
-            bottomTextField.defaultTextAttributes = textConfig.meme
-            bottomTextField.delegate = self
-            sharedButton.isEnabled = false
-        case "cancelApplication":
-            topTextField.text = "TOP"
-            bottomTextField.text = "BOTTOM"
-            imagePickerView.image = UIImage()
-            sharedButton.isEnabled = false
-        case "hideToolbar":
-            topToolbar.isHidden = true
-            bottomToolbar.isHidden = true
-        case "showToolbar":
-            topToolbar.isHidden = false
-            bottomToolbar.isHidden = false
-        default:
-            return
+            case "viewDidLoad":
+                configure(textField: topTextField, withText: "TOP", textAttribute: textConfig.meme)
+                configure(textField: bottomTextField, withText: "BOTTOM", textAttribute: textConfig.meme)
+                enableShareButton(withState: false)
+            case "cancelApplication":
+                configure(textField: topTextField, withText: "TOP", textAttribute: textConfig.meme)
+                configure(textField: bottomTextField, withText: "BOTTOM", textAttribute: textConfig.meme)
+                imagePickerView.image = UIImage()
+                enableShareButton(withState: false)
+            case "hideToolbar":
+                setToolbarHidden(withState: true)
+            case "showToolbar":
+                setToolbarHidden(withState: false)
+            default:
+                return
         }
+    }
+    
+    func configure(textField:UITextField, withText:String, textAttribute:[NSAttributedString.Key : Any]){
+        textField.defaultTextAttributes = textAttribute
+        textField.text = withText
+        textField.delegate = self
+    }
+    
+    func setToolbarHidden(withState:Bool){
+        topToolbar.isHidden = withState
+        bottomToolbar.isHidden = withState
+    }
+    
+    func enableShareButton(withState:Bool){
+        sharedButton.isEnabled = withState
     }
 }
 
@@ -176,7 +190,7 @@ extension MemeEditorViewController{
 extension MemeEditorViewController:UIImagePickerControllerDelegate,UINavigationControllerDelegate{
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
         if let image = info[.originalImage] as? UIImage {
-                sharedButton.isEnabled = true
+                enableShareButton(withState: true)
                 imagePickerView.image = image
         }
         picker.dismiss(animated: true, completion: nil)
